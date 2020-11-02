@@ -23,7 +23,7 @@
     "main": "server.js",
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/kierawilson25/DynamicWeb"
     },
     "dependencies": {
         "express": "^4.17.1",
