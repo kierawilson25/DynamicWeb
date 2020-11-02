@@ -38,6 +38,13 @@ app.get('/year/:selected_year', (req, res) => {
     fs.readFile(path.join(template_dir, 'year.html'), (err, template) => {
         // modify `template` and send response
         // this will require a query to the SQL database
+        if(err)
+        {
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.write('Error: No data for :selected_year');
+            res.end();
+        }
+
 
         res.status(200).type('html').send(template); // <-- you may need to change this
     });
