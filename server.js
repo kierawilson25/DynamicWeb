@@ -44,6 +44,9 @@ app.get('/year/:selected_year', (req, res) => {
             res.write('Error: No data for :selected_year');
             res.end();
         }
+        else {
+            
+        }
 
 
         res.status(200).type('html').send(template); // <-- you may need to change this
