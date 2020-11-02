@@ -5,6 +5,7 @@ let path = require('path');
 // NPM modules
 let express = require('express');
 let sqlite3 = require('sqlite3');
+const { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } = require('constants');
 
 
 let public_dir = path.join(__dirname, 'public');
@@ -24,6 +25,29 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
     }
 });
 
+function generateTable(table, data) {
+    //Generate the table head
+    let thead = table.createTHead();
+    let hrow = thead.insertRow();
+
+    for (let key of data[0]) {
+        let th = document.createElement("th");
+        let text = document.createTextNode(key);
+        th.appendChild(text);
+        hrow.appendChild(th);
+    }
+
+    //Generate the table data
+    for(let element of data) {
+        let row = table.insertRow();
+        for(i in element) {
+            let cell = row.insertCell();
+            let text = document.createTextNode(element[i]);
+            cell.appendChild(text);
+        }
+    }
+}
+
 app.use(express.static(public_dir)); // serve static files from 'public' directory
 
 
@@ -40,16 +64,20 @@ app.get('/year/:selected_year', (req, res) => {
         // this will require a query to the SQL database
         if(err)
         {
-            res.writeHead(200, {'Content-Type': 'text/html'});
-            res.write('Error: No data for :selected_year');
-            res.end();
+            res.status(404).send('Error: No data found');
         }
         else {
-            
+            // database data 
+
+            // Table
+            let table = document.createElement("table")
+            generateTable(table, data);
+
+            res.status(200).type('html').send(template); // <-- you may need to change this
         }
 
 
-        res.status(200).type('html').send(template); // <-- you may need to change this
+        
     });
 });
 
@@ -59,8 +87,14 @@ app.get('/state/:selected_state', (req, res) => {
     fs.readFile(path.join(template_dir, 'state.html'), (err, template) => {
         // modify `template` and send response
         // this will require a query to the SQL database
-
-        res.status(200).type('html').send(template); // <-- you may need to change this
+        if(err)
+        {
+            res.status(404).send('Error: No data found');
+        }
+        else {
+            
+            res.status(200).type('html').send(template); // <-- you may need to change this
+        }
     });
 });
 
@@ -70,10 +104,17 @@ app.get('/energy/:selected_energy_source', (req, res) => {
     fs.readFile(path.join(template_dir, 'energy.html'), (err, template) => {
         // modify `template` and send response
         // this will require a query to the SQL database
-
-        res.status(200).type('html').send(template); // <-- you may need to change this
+        if(err)
+        {
+            res.status(404).send('Error: No data found');
+        }
+        else {
+            
+            res.status(200).type('html').send(template); // <-- you may need to change this
+        }
     });
 });
+
 
 app.listen(port, () => {
     console.log('Now listening on port ' + port);
