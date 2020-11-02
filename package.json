@@ -3,8 +3,8 @@
     "version": "0.0.0",
     "description": "Dynamic Web Server using Node JS",
     "author": {
-        "name": "",
-        "email": ""
+        "name": "Kiera Wilson",
+        "email": "wils6171@stthomas.edu"
     },
     "contributors": [
         {
@@ -12,14 +12,18 @@
             "email": "wils6171@stthomas.edu"
         },
         {
-            "name": "",
-            "email": ""
+            "name": "Reid Sobania",
+            "email": "soba2034@stthomas.edu"
+        },
+        {
+            "name": "Emma Sinn",
+            "email": "sinn2375@stthomas.edu"
         }
     ],
     "main": "server.js",
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/kierawilson25/DynamicWeb"
     },
     "dependencies": {
         "express": "^4.17.1",
