@@ -26,6 +26,7 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
 });
 
 function generateTable(table, data) {
+    //Generate the table
     //Generate the table head
     let thead = table.createTHead();
     let hrow = thead.insertRow();
@@ -70,10 +71,33 @@ app.get('/year/:selected_year', (req, res) => {
             // database data 
 
             // Table
-            let table = document.createElement("table")
+            let table = document.createElement("table");
             generateTable(table, data);
 
+            // Buttons
+            // Next and Prev buttons for navigating between years
+            var buttonNext = document.createElement("button");
+            var buttonPrev = document.createElement("button");
+            button.innerHTML = "Do Something";
+
+            // Locations of the buttons, loc1 is for prev, loc2 is for next
+            var loc1 = document.getElementsByTagName("body")[0];
+            var loc2 = document.getElementsByTagName("h2")[1];
+            loc1.appendChild(buttonPrev);
+            loc2.appendChild(buttonNext);
+
+            // 3. Add event handler
+            buttonNext.addEventListener ("click", function() {
+                
+            });
+            buttonPrev.addEventListener ("click", function() {
+                //<input type="button" onclick="location.href='https://google.com';" value="Go to Google" />
+            });
+
             res.status(200).type('html').send(template); // <-- you may need to change this
+            res.write(template.replace('{{YEAR}}', req.params.selected_year));
+            res.write(template.replace('{{TABLE}}', req.params.table));
+            res.end();
         }
 
 
@@ -94,6 +118,8 @@ app.get('/state/:selected_state', (req, res) => {
         else {
             
             res.status(200).type('html').send(template); // <-- you may need to change this
+            res.write(template.replace('{{STATE}}', req.params.selected_state))
+            res.end();
         }
     });
 });
@@ -111,6 +137,8 @@ app.get('/energy/:selected_energy_source', (req, res) => {
         else {
             
             res.status(200).type('html').send(template); // <-- you may need to change this
+            res.write(template.replace('{{ENERGY}}', req.params.selected_energy_source))
+            res.end();
         }
     });
 });
