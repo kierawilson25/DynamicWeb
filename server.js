@@ -74,25 +74,32 @@ app.get('/year/:selected_year', (req, res) => {
             let table = document.createElement("table");
             generateTable(table, data);
 
-            // Buttons
-            // Next and Prev buttons for navigating between years
-            var buttonNext = document.createElement("button");
-            var buttonPrev = document.createElement("button");
-            button.innerHTML = "Do Something";
+            // Previous and Next Years
+            //Prev
+            var prev = document.createElement("a");
+            var prev_link_text = document.createTextNode("Previous Year");
+            if(selected_year == 1960) {
+                var prev_year = 2018;
+            } else {
+                var prev_year = selected_year - 1;
+            }
+            prev.appendChild(prev_link_text);
+            prev.title = "Previous Year: " + prev_year;
+            prev.href = '/year/:prev_year';
+            document.body.appendChild(prev);
 
-            // Locations of the buttons, loc1 is for prev, loc2 is for next
-            var loc1 = document.getElementsByTagName("body")[0];
-            var loc2 = document.getElementsByTagName("h2")[1];
-            loc1.appendChild(buttonPrev);
-            loc2.appendChild(buttonNext);
-
-            // 3. Add event handler
-            buttonNext.addEventListener ("click", function() {
-                
-            });
-            buttonPrev.addEventListener ("click", function() {
-                //<input type="button" onclick="location.href='https://google.com';" value="Go to Google" />
-            });
+            //Next
+            var next = document.createElement("a");
+            var next_link_text = document.createTextNode("Next Year");
+            if(selected_year == 2018) {
+                var prev_year = 1960;
+            } else {
+                var prev_year = selected_year + 1;
+            }
+            next.appendChild(next_link_text);
+            next.title = "Previous Year: " + next_year;
+            next.href = '/year/:prev_year';
+            document.body.appendChild(next);
 
             res.status(200).type('html').send(template); // <-- you may need to change this
             res.write(template.replace('{{YEAR}}', req.params.selected_year));
