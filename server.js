@@ -69,13 +69,14 @@ app.get('/year/:selected_year', (req, res) => {
         }
         else {
             // database data 
+            //This is the query we need to use "SELECT * FROM  Consumption"
 
             // Table
             let table = document.createElement("table");
             generateTable(table, data);
 
             // Previous and Next Years
-            //Prev
+            //Prev Link
             var prev = document.createElement("a");
             var prev_link_text = document.createTextNode("Previous Year");
             if(selected_year == 1960) {
@@ -88,7 +89,7 @@ app.get('/year/:selected_year', (req, res) => {
             prev.href = '/year/:prev_year';
             document.body.appendChild(prev);
 
-            //Next
+            //Next Link
             var next = document.createElement("a");
             var next_link_text = document.createTextNode("Next Year");
             if(selected_year == 2018) {
@@ -123,6 +124,9 @@ app.get('/state/:selected_state', (req, res) => {
             res.status(404).send('Error: No data found');
         }
         else {
+            // database data
+            //This is the query we will use
+            // SELECT * FROM Conspumtion JOIN States WHERE state_name = selected_state
             
             res.status(200).type('html').send(template); // <-- you may need to change this
             res.write(template.replace('{{STATE}}', req.params.selected_state))
@@ -142,7 +146,12 @@ app.get('/energy/:selected_energy_source', (req, res) => {
             res.status(404).send('Error: No data found');
         }
         else {
-            
+            // database data
+            //This is the query we will use
+            // SELECT * FROM Conspumtion
+
+
+
             res.status(200).type('html').send(template); // <-- you may need to change this
             res.write(template.replace('{{ENERGY}}', req.params.selected_energy_source))
             res.end();
