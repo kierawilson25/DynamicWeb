@@ -74,7 +74,7 @@ app.get('/year/:selected_year', (req, res) => {
             // This should work but I haven't tested it yet
             var query = 'SELECT * FROM Consumption WHERE year = ?';
             var year = selected_year;
-            db.all(sql, [], (err, rows) => {
+            db.all(query, [year], (err, rows) => {
                 if(err) {
                     console.log("Error in query for Year");
                 } else {
@@ -86,7 +86,7 @@ app.get('/year/:selected_year', (req, res) => {
             let table = document.createElement("table");
             generateTable(table, year_rows);
 
-            // Previous and Next Years
+            // Previous and Next Years \\
             // Prev Link
             var prev = document.createElement("a");
             var prev_link_text = document.createTextNode("Previous Year");
@@ -104,14 +104,15 @@ app.get('/year/:selected_year', (req, res) => {
             var next = document.createElement("a");
             var next_link_text = document.createTextNode("Next Year");
             if(selected_year == 2018) {
-                var prev_year = 1960;
+                var next_year = 1960;
             } else {
-                var prev_year = selected_year + 1;
+                var next_year = selected_year + 1;
             }
             next.appendChild(next_link_text);
-            next.title = "Previous Year: " + next_year;
-            next.href = '/year/:prev_year';
+            next.title = "Next Year: " + next_year;
+            next.href = '/year/:next_year';
             document.body.appendChild(next);
+            // Previous and Next Years \\
 
             res.status(200).type('html').send(template); // <-- you may need to change this
             res.write(template.replace('{{YEAR}}', req.params.selected_year));
@@ -138,7 +139,53 @@ app.get('/state/:selected_state', (req, res) => {
             // database data
             // This is the query we will use
             // SELECT * FROM Conspumtion JOIN States WHERE state_name = selected_state
-            
+            var query = 'SELECT * FROM Consumption JOIN States WHERE state_name = ?';
+            var state_name = selected_state;
+            db.all(query, [state_name], (err, rows) => {
+                if(err) {
+                    console.log("Error in query for State");
+                } else {
+                    state_rows = rows;
+                }
+            });
+
+            // This is to get a list of states to use for next and prev states
+            db.all("SELECT * FROM States", [], (err, rows) => {
+                if(err) {
+                    console.log("Error in query in States for States for next and prev");
+                } else {
+                    states = rows;
+                }
+            })
+
+            var indexOfState = -1;
+            var i = 0;
+            while(indexOfState == -1) {
+                if(state[i][state_name] == selected_state) {
+                    indexOfState = i;
+                }
+            }
+
+            // Previous and Next States \\
+            // Prev Link
+            var prev = document.createElement("a");
+            var prev_link_text = document.createTextNode("Previous State");
+            var prev_state = state[indexOfState - 1][state_name];
+            prev.appendChild(prev_link_text);
+            prev.title = "Previous State: " + prev_state;
+            prev.href = '/state/:prev_state';
+            document.body.appendChild(prev);
+
+            //Next Link
+            var next = document.createElement("a");
+            var next_link_text = document.createTextNode("Next State");
+            var next_state = state[indexOfState + 1][state_name];
+            next.appendChild(next_link_text);
+            next.title = "Previous State: " + next_state;
+            next.href = '/year/:next_state';
+            document.body.appendChild(next);
+            // End of previous and next states \\
+
             res.status(200).type('html').send(template); // <-- you may need to change this
             res.write(template.replace('{{STATE}}', req.params.selected_state))
             res.end();
@@ -160,7 +207,16 @@ app.get('/energy/:selected_energy_source', (req, res) => {
             // database data
             // This is the query we will use
             // SELECT * FROM Conspumtion
-
+            var query = 'SELECT * FROM Consumption ORDER BY year, state';
+            //Loop thru rows, make dict of dicts if the year already exists, check if the state exists, then add it or not depending on if it exists or not
+            //var state_name = selected_state;
+            db.all(query, [], (err, rows) => {
+                if(err) {
+                    console.log("Error in query for Source");
+                } else {
+                    energy_rows = rows;
+                }
+            });
 
 
             res.status(200).type('html').send(template); // <-- you may need to change this
