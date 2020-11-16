@@ -20,11 +20,39 @@
     
     <!-- create template here -->
     <h2>
+        {{PREV_YEAR}}
         {{YEAR}}
+        {{NEXT_YEAR}}
     </h2>
+    
     <p>
-        <!-- Replace with table -->
-        {{TABLE}}
+        <!-- Add contents of the table -->
+        <table>
+            <tr>
+                <th>
+                    State
+                </th>
+                <th>
+                    Coal
+                </th>
+                <th>
+                    Natural Gas
+                </th>
+                <th>
+                    Nuclear
+                </th>
+                <th>
+                    Petroleum
+                </th>
+                <th>
+                    Renewable
+                </th>
+                <th>
+                    Total
+                </th>
+            </tr>
+            {{YEAR_TABLE}}
+        </table>
     </p>
 </body>
 </html>

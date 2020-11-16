@@ -6,6 +6,7 @@ let path = require('path');
 let express = require('express');
 let sqlite3 = require('sqlite3');
 const { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } = require('constants');
+const { table } = require('console');
 
 
 let public_dir = path.join(__dirname, 'public');
@@ -25,28 +26,27 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
     }
 });
 
-function generateTable(table, data) {
-    //Generate the table
-    //Generate the table head
-    let thead = table.createTHead();
-    let hrow = thead.insertRow();
-
-    for (let key of data[0]) {
-        let th = document.createElement("th");
-        let text = document.createTextNode(key);
-        th.appendChild(text);
-        hrow.appendChild(th);
-    }
-
+function generateTable(data) {
     //Generate the table data
-    for(let element of data) {
-        let row = table.insertRow();
-        for(i in element) {
-            let cell = row.insertCell();
-            let text = document.createTextNode(element[i]);
-            cell.appendChild(text);
+
+    let table = "";
+    let key;
+    for(key in data) {
+        let item = data[key];
+        table = table + " <tr> ";
+        let total = 0;
+        for(let element in item) {
+            if(element != "year") {
+                table = table + " <td>" + item[element] + "</td> ";
+                if(element != "state_abbreviation") {
+                    total = total + parseInt(item[element]);
+                }
+            }
         }
+        table = table + " <td>" + total + "</td> "
+        table = table + " </tr>";
     }
+    return table;
 }
 
 app.use(express.static(public_dir)); // serve static files from 'public' directory
@@ -54,13 +54,13 @@ app.use(express.static(public_dir)); // serve static files from 'public' directo
 
 // GET request handler for home page '/' (redirect to /year/2018)
 app.get('/', (req, res) => {
-    res.redirect('/year/2018');
+    res.redirect('/year/:2018');
 });
 
 // GET request handler for '/year/*'
 app.get('/year/:selected_year', (req, res) => {
     console.log(req.params.selected_year);
-    fs.readFile(path.join(template_dir, 'year.html'), (err, template) => {
+    fs.readFile(path.join(template_dir, 'year.html'), 'utf8', (err, template) => {
         // modify `template` and send response
         // this will require a query to the SQL database
         if(err)
@@ -72,51 +72,75 @@ app.get('/year/:selected_year', (req, res) => {
             // database data 
             // This is the query we need to use "SELECT * FROM Consumption WHERE year = selected_year"
             // This should work but I haven't tested it yet
-            var query = 'SELECT * FROM Consumption WHERE year = ?';
-            var year = selected_year;
-            db.all(query, [year], (err, rows) => {
-                if(err) {
-                    console.log("Error in query for Year");
-                } else {
-                    year_rows = rows;
-                }
-            });
+            let query = 'SELECT * FROM Consumption WHERE year = ?';
+            let year = 2018;
+            if(req.params.selected_year.includes(":")) {
+                year = parseInt(req.params.selected_year.slice(1, 5));
+            } else {
+                year = req.selected_year;
+            }    
+            var year_rows;
+            //const getReplacement = str => Promise.resolve('[${str}]');
+            //const promises = [];
+            //template = template.replace("{{YEAR_TABLE}}", data => {
+               // promises.push(getReplacement(data));
+            //});
+            var queryDonePromise = new Promise(function(resolve, reject) {
+                db.all(query, [year], (err, rows) => {
+                    if(err) {
+                        console.log("Error in query for Year");
+                    } else {
+                        year_rows = rows;
+                    }
+                    resolve(year_rows);
+                });
+                
+            }).then(data => {
+                // Table
+                // Write everything as strings not creating elements
+                // Note: Table and table headers can be put in the html (things that are going to be the same on every page)
+                template = template.replace("{{YEAR_TABLE}}", data => {
+                    generateTable(data);
+                });
 
-            // Table
-            let table = document.createElement("table");
-            generateTable(table, year_rows);
+            })
+
+
+
+            // Replaces the header year \\
+            template = template.replace("{{YEAR}}", year);
+            // End Replace header year \\
+
+            
+            // End replace table \\
 
             // Previous and Next Years \\
             // Prev Link
-            var prev = document.createElement("a");
-            var prev_link_text = document.createTextNode("Previous Year");
-            if(selected_year == 1960) {
-                var prev_year = 2018;
+            let prev_link = "<a href=";
+            let prev_year = year;
+            if(req.params.selected_year == 1960) {
+                prev_year = 2018;
             } else {
-                var prev_year = selected_year - 1;
+                prev_year = prev_year - 1;
             }
-            prev.appendChild(prev_link_text);
-            prev.title = "Previous Year: " + prev_year;
-            prev.href = '/year/:prev_year';
-            document.body.appendChild(prev);
+            prev_link = prev_link + '/year/:' + prev_year + ">Previous Year: " + prev_year + "</a>";
+
 
             //Next Link
-            var next = document.createElement("a");
-            var next_link_text = document.createTextNode("Next Year");
-            if(selected_year == 2018) {
-                var next_year = 1960;
+            let next_link = "<a href=";
+            let next_year = year;
+            if(year == 2018) {
+                next_year = 1960;
             } else {
-                var next_year = selected_year + 1;
+                next_year = next_year + 1;
             }
-            next.appendChild(next_link_text);
-            next.title = "Next Year: " + next_year;
-            next.href = '/year/:next_year';
-            document.body.appendChild(next);
-            // Previous and Next Years \\
+            next_link = next_link + '/year/:' + next_year + ">Next Year: " + next_year + "</a>";
+            
+            template = template.replace("{{PREV_YEAR}}", prev_link);
+            template = template.replace("{{NEXT_YEAR}}", next_link);
+            // End of Previous and Next Years \\
 
             res.status(200).type('html').send(template); // <-- you may need to change this
-            res.write(template.replace('{{YEAR}}', req.params.selected_year));
-            res.write(template.replace('{{TABLE}}', req.params.table));
             res.end();
         }
 
@@ -128,7 +152,7 @@ app.get('/year/:selected_year', (req, res) => {
 // GET request handler for '/state/*'
 app.get('/state/:selected_state', (req, res) => {
     console.log(req.params.selected_state);
-    fs.readFile(path.join(template_dir, 'state.html'), (err, template) => {
+    fs.readFile(path.join(template_dir, 'state.html'), 'utf8', (err, template) => {
         // modify `template` and send response
         // this will require a query to the SQL database
         if(err)
@@ -139,8 +163,9 @@ app.get('/state/:selected_state', (req, res) => {
             // database data
             // This is the query we will use
             // SELECT * FROM Conspumtion JOIN States WHERE state_name = selected_state
-            var query = 'SELECT * FROM Consumption JOIN States WHERE state_name = ?';
-            var state_name = selected_state;
+            let query = 'SELECT * FROM Consumption JOIN States WHERE state_name = ?';
+            let state_name = req.params.selected_state;
+            let state_rows;
             db.all(query, [state_name], (err, rows) => {
                 if(err) {
                     console.log("Error in query for State");
@@ -150,6 +175,7 @@ app.get('/state/:selected_state', (req, res) => {
             });
 
             // This is to get a list of states to use for next and prev states
+            let states = 0;
             db.all("SELECT * FROM States", [], (err, rows) => {
                 if(err) {
                     console.log("Error in query in States for States for next and prev");
@@ -158,8 +184,10 @@ app.get('/state/:selected_state', (req, res) => {
                 }
             })
 
-            var indexOfState = -1;
-            var i = 0;
+            // Index of State is a pointer into state to indicate what spot the current state is at
+            // That spot contains the state's full name and the abbreviation of the state
+            let indexOfState = -1;
+            let i = 0;
             while(indexOfState == -1) {
                 if(state[i][state_name] == selected_state) {
                     indexOfState = i;
@@ -168,23 +196,33 @@ app.get('/state/:selected_state', (req, res) => {
 
             // Previous and Next States \\
             // Prev Link
-            var prev = document.createElement("a");
-            var prev_link_text = document.createTextNode("Previous State");
-            var prev_state = state[indexOfState - 1][state_name];
-            prev.appendChild(prev_link_text);
-            prev.title = "Previous State: " + prev_state;
-            prev.href = '/state/:prev_state';
-            document.body.appendChild(prev);
+            let prev_link = "<a href=";
+            let prev_state;
+            if(indexOfState == 0) {
+                prev_state = state[state.length][state_name];
+            } else {
+                prev_state = state[indexOfState + 1][state_name];
+            }
+            prev_link = prev_link + '/state/:' + prev_state + ">Previous State: " + prev_state + "</a>";
 
             //Next Link
-            var next = document.createElement("a");
-            var next_link_text = document.createTextNode("Next State");
-            var next_state = state[indexOfState + 1][state_name];
-            next.appendChild(next_link_text);
-            next.title = "Previous State: " + next_state;
-            next.href = '/year/:next_state';
-            document.body.appendChild(next);
-            // End of previous and next states \\
+            let next_link = "<a href=";
+            let next_state;
+            if(indexOfState == state.length - 1) {
+                next_state = state[0][state_name];
+            } else {
+                next_state = state[indexOfState - 1][state_name];
+            }
+            next_link = next_link + '/state/:' + next_state + ">Next State: " + next_state + "</a>";
+            
+            template = template.replace("{{PREV_STATE}}", prev_link);
+            template = template.replace("{{NEXT_STATE}}", next_link);
+            // Previous and Next Years \\
+
+            // Get the picture \\
+            state_img = "<img src=" + "\"" + state[indexOfState][state_name] + ".jpg" + "\"" + " alt=" + "\"" + state[indexOfState][state_name] + "\"";
+            
+            template = template.replace("{{STATE_IMAGE}}", state_img);
 
             res.status(200).type('html').send(template); // <-- you may need to change this
             res.write(template.replace('{{STATE}}', req.params.selected_state))
@@ -196,7 +234,7 @@ app.get('/state/:selected_state', (req, res) => {
 // GET request handler for '/energy/*'
 app.get('/energy/:selected_energy_source', (req, res) => {
     console.log(req.params.selected_energy_source);
-    fs.readFile(path.join(template_dir, 'energy.html'), (err, template) => {
+    fs.readFile(path.join(template_dir, 'energy.html'), 'utf8', (err, template) => {
         // modify `template` and send response
         // this will require a query to the SQL database
         if(err)
@@ -210,6 +248,7 @@ app.get('/energy/:selected_energy_source', (req, res) => {
             var query = 'SELECT * FROM Consumption ORDER BY year, state';
             //Loop thru rows, make dict of dicts if the year already exists, check if the state exists, then add it or not depending on if it exists or not
             //var state_name = selected_state;
+            let energy_rows;
             db.all(query, [], (err, rows) => {
                 if(err) {
                     console.log("Error in query for Source");

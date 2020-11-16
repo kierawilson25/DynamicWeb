@@ -18,12 +18,43 @@
 </head>
 <body>
     <!-- create template here -->
+    
     <h2>
+        {{PREV_STATE}}
         {{STATE}}
+        {{NEXT_STATE}}
     </h2>
+    
+    {{STATE_IMAGE}}
     <p>
         <!-- Replace with table -->
         {{TABLE}}
     </p>
+    <table>
+        <tr>
+            <th>
+                Year
+            </th>
+            <th>
+                Coal
+            </th>
+            <th>
+                Natural Gas
+            </th>
+            <th>
+                Nuclear
+            </th>
+            <th>
+                Petroleum
+            </th>
+            <th>
+                Renewable
+            </th>
+            <th>
+                Total
+            </th>
+        </tr>
+        {{TABLE}}
+    </table>
 </body>
 </html>
