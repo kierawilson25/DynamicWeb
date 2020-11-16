@@ -68,15 +68,26 @@ app.get('/year/:selected_year', (req, res) => {
             res.status(404).send('Error: No data found');
         }
         else {
+            // NOTE: .all gets ALL results from the query, .get only gets the first query
             // database data 
-            //This is the query we need to use "SELECT * FROM  Consumption"
+            // This is the query we need to use "SELECT * FROM Consumption WHERE year = selected_year"
+            // This should work but I haven't tested it yet
+            var query = 'SELECT * FROM Consumption WHERE year = ?';
+            var year = selected_year;
+            db.all(sql, [], (err, rows) => {
+                if(err) {
+                    console.log("Error in query for Year");
+                } else {
+                    year_rows = rows;
+                }
+            });
 
             // Table
             let table = document.createElement("table");
-            generateTable(table, data);
+            generateTable(table, year_rows);
 
             // Previous and Next Years
-            //Prev Link
+            // Prev Link
             var prev = document.createElement("a");
             var prev_link_text = document.createTextNode("Previous Year");
             if(selected_year == 1960) {
@@ -125,7 +136,7 @@ app.get('/state/:selected_state', (req, res) => {
         }
         else {
             // database data
-            //This is the query we will use
+            // This is the query we will use
             // SELECT * FROM Conspumtion JOIN States WHERE state_name = selected_state
             
             res.status(200).type('html').send(template); // <-- you may need to change this
@@ -147,7 +158,7 @@ app.get('/energy/:selected_energy_source', (req, res) => {
         }
         else {
             // database data
-            //This is the query we will use
+            // This is the query we will use
             // SELECT * FROM Conspumtion
 
 
