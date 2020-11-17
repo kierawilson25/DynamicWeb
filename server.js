@@ -7,6 +7,7 @@ let express = require('express');
 let sqlite3 = require('sqlite3');
 const { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } = require('constants');
 const { table } = require('console');
+const { resolve } = require('path');
 
 
 let public_dir = path.join(__dirname, 'public');
@@ -85,6 +86,9 @@ app.get('/year/:selected_year', (req, res) => {
             //template = template.replace("{{YEAR_TABLE}}", data => {
                // promises.push(getReplacement(data));
             //});
+
+            tb = "";
+
             var queryDonePromise = new Promise(function(resolve, reject) {
                 db.all(query, [year], (err, rows) => {
                     if(err) {
@@ -94,16 +98,14 @@ app.get('/year/:selected_year', (req, res) => {
                     }
                     resolve(year_rows);
                 });
-                
             }).then(data => {
                 // Table
                 // Write everything as strings not creating elements
                 // Note: Table and table headers can be put in the html (things that are going to be the same on every page)
-                template = template.replace("{{YEAR_TABLE}}", data => {
-                    generateTable(data);
-                });
-
-            })
+                tb = tb + generateTable(data);
+                console.log(tb);
+                
+            });
 
 
 
@@ -118,7 +120,7 @@ app.get('/year/:selected_year', (req, res) => {
             // Prev Link
             let prev_link = "<a href=";
             let prev_year = year;
-            if(req.params.selected_year == 1960) {
+            if(year == 1960) {
                 prev_year = 2018;
             } else {
                 prev_year = prev_year - 1;
