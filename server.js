@@ -168,7 +168,10 @@ app.get('/state/:selected_state', (req, res) => {
             // This is the query we will use
             // SELECT * FROM Conspumtion JOIN States WHERE state_name = selected_state
             let query = 'SELECT * FROM Consumption JOIN States WHERE state_name = ?';
-            let state_name = req.params.selected_state;
+            var state_name = req.params.selected_state;
+            if(state_name.includes(":")) {
+                state_name = state_name.slice(1);
+            }
             let state_rows;
             var queryStatePromise = new Promise(function(resolve, reject) {
                 db.all(query, [state_name], (err, rows) => {
@@ -190,56 +193,58 @@ app.get('/state/:selected_state', (req, res) => {
                         states = rows;
                     }
                 });
-                resolve(state_rows, states);
+                resolve(state_rows)//, states);
             }).then(data => {
                 console.log("Hello");
-                states = data[1];
+                //states = data[1];
                 state_rows = data[0];
-
-                // Index of State is a pointer into state to indicate what spot the current state is at
-                // That spot contains the state's full name and the abbreviation of the state
-                let indexOfState = -1;
-                let i = 0;
-                while(indexOfState == -1) {
-                    if(states[i][state_name] == selected_state) {
-                        indexOfState = i;
-                    }
-                }
-
-                // Previous and Next States \\
-                // Prev Link
-                let prev_link = "<a href=";
-                let prev_state;
-                if(indexOfState == 0) {
-                    prev_state = states[state.length][state_name];
-                } else {
-                    prev_state = states[indexOfState + 1][state_name];
-                }
-                prev_link = prev_link + '/state/:' + prev_state + ">Previous State: " + prev_state + "</a>";
-
-                //Next Link
-                let next_link = "<a href=";
-                let next_state;
-                if(indexOfState == state.length - 1) {
-                    next_state = states[0][state_name];
-                } else {
-                    next_state = states[indexOfState + 1][state_name];
-                }
-                next_link = next_link + '/state/:' + next_state + ">Next State: " + next_state + "</a>";
-                
-                template = template.replace("{{PREV_STATE}}", prev_link);
-                template = template.replace("{{NEXT_STATE}}", next_link);
-                // End of Previous and Next Years \\
-
-                // Get the picture \\
-                state_img = "<img src=" + "\"" + state[indexOfState][state_name] + ".jpg" + "\"" + " alt=" + "\"" + state[indexOfState][state_name] + "\"";
-                template = template.replace("{{STATE_IMAGE}}", state_img);
-                // End of gettign the picture \\
-
-                // Replace the State Title \\
-                template = template.replace('{{STATE}}', req.params.selected_state);
-                // End of replace state title \\
             });
+            // I created this to test our links as the query isn't working
+            states = [["AK", "Alaska"], ["AL", "Alabama"], ["AR", "Arizona"]];
+            // Index of State is a pointer into state to indicate what spot the current state is at
+            // That spot contains the state's full name and the abbreviation of the state
+            let indexOfState = -1;
+            let i = 0;
+            while(indexOfState == -1) {
+                if(states[i][1/*"state_name"*/] == state_name) {
+                    indexOfState = i;
+                }
+            }
+
+            // Previous and Next States \\
+            // Prev Link
+            let prev_link = "<a href=";
+            let prev_state;
+            if(indexOfState == 0) {
+                prev_state = states[states.length - 1][1/*"state_name"*/];
+            } else {
+                prev_state = states[indexOfState + 1][1/*"state_name"*/];
+            }
+            prev_link = prev_link + '/state/:' + prev_state + ">Previous State: " + prev_state + "</a>";
+            
+            //Next Link
+            let next_link = "<a href=";
+            let next_state;
+            if(indexOfState == (states.length - 1)) {
+                next_state = states[0][1/*"state_name"*/];
+            } else {
+                next_state = states[indexOfState + 1][1/*"state_name"*/];
+            }
+            next_link = next_link + '/state/:' + next_state + ">Next State: " + next_state + "</a>";
+            
+            template = template.replace("{{PREV_STATE}}", prev_link);
+            template = template.replace("{{NEXT_STATE}}", next_link);
+            // End of Previous and Next Years \\
+
+            // Get the picture \\
+            state_img = "<img src=" + "\"" + states[indexOfState][1/*"state_name"*/] + ".jpg" + "\"" + " alt=" + "\"" + states[indexOfState][1/*"state_name"*/] + "\"";
+            template = template.replace("{{STATE_IMAGE}}", state_img);
+            // End of gettign the picture \\
+
+            // Replace the State Title \\
+            template = template.replace('{{STATE}}', state_name);
+            // End of replace state title \\
+            
             res.status(200).type('html').send(template); // <-- you may need to change this
             res.end();
         }
