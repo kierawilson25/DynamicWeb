@@ -89,7 +89,7 @@ app.get('/year/:selected_year', (req, res) => {
 
             var tb = "";
 
-            var queryDonePromise = new Promise(function(resolve, reject) {
+            var queryYearPromise = new Promise(function(resolve, reject) {
                 db.all(query, [year], (err, rows) => {
                     if(err) {
                         console.log("Error in query for Year");
@@ -170,10 +170,11 @@ app.get('/state/:selected_state', (req, res) => {
             let query = 'SELECT * FROM Consumption JOIN States WHERE state_name = ?';
             let state_name = req.params.selected_state;
             let state_rows;
-            var queryDonePromise = new Promise(function(resolve, reject) {
+            var queryStatePromise = new Promise(function(resolve, reject) {
                 db.all(query, [state_name], (err, rows) => {
                     if(err) {
                         console.log("Error in query for State");
+                        reject();
                     } else {
                         state_rows = rows;
                     }
@@ -184,11 +185,12 @@ app.get('/state/:selected_state', (req, res) => {
                 db.all("SELECT * FROM States", [], (err, rows) => {
                     if(err) {
                         console.log("Error in query in States for States for next and prev");
+                        reject();
                     } else {
                         states = rows;
                     }
                 });
-                //if(state_rows.length == 0)
+                resolve(state_rows, states);
             }).then(data => {
                 console.log("Hello");
             });
@@ -226,15 +228,18 @@ app.get('/state/:selected_state', (req, res) => {
             
             template = template.replace("{{PREV_STATE}}", prev_link);
             template = template.replace("{{NEXT_STATE}}", next_link);
-            // Previous and Next Years \\
+            // End of Previous and Next Years \\
 
             // Get the picture \\
             state_img = "<img src=" + "\"" + state[indexOfState][state_name] + ".jpg" + "\"" + " alt=" + "\"" + state[indexOfState][state_name] + "\"";
-            
             template = template.replace("{{STATE_IMAGE}}", state_img);
+            // End of gettign the picture \\
+
+            // Replace the State Title \\
+            template = template.replace('{{STATE}}', req.params.selected_state);
+            // End of replace state title \\
 
             res.status(200).type('html').send(template); // <-- you may need to change this
-            res.write(template.replace('{{STATE}}', req.params.selected_state))
             res.end();
         }
     });
@@ -258,17 +263,25 @@ app.get('/energy/:selected_energy_source', (req, res) => {
             //Loop thru rows, make dict of dicts if the year already exists, check if the state exists, then add it or not depending on if it exists or not
             //var state_name = selected_state;
             let energy_rows;
-            db.all(query, [], (err, rows) => {
-                if(err) {
-                    console.log("Error in query for Source");
-                } else {
-                    energy_rows = rows;
-                }
+            var queryDonePromise = new Promise(function(resolve, reject) {
+                db.all(query, [], (err, rows) => {
+                    if(err) {
+                        console.log("Error in query for Source");
+                        reject();
+                    } else {
+                        energy_rows = rows;
+                        resolve(energy_rows);
+                    }
+                });
+            }).then(data => {
+                console.log("Hello");
             });
 
+            // Header for Energy Source \\
+            template = template.replace('{{ENERGY}}', req.params.selected_energy_source);
+            // End of header for Energy Source \\
 
-            res.status(200).type('html').send(template); // <-- you may need to change this
-            res.write(template.replace('{{ENERGY}}', req.params.selected_energy_source))
+            res.status(200).type('html').send(template); // <-- you may need to change this           
             res.end();
         }
     });
