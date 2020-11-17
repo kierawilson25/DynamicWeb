@@ -185,7 +185,7 @@ app.get('/state/:selected_state', (req, res) => {
                 db.all("SELECT * FROM States", [], (err, rows) => {
                     if(err) {
                         console.log("Error in query in States for States for next and prev");
-                        reject();
+                        reject("Error in query");
                     } else {
                         states = rows;
                     }
@@ -193,52 +193,53 @@ app.get('/state/:selected_state', (req, res) => {
                 resolve(state_rows, states);
             }).then(data => {
                 console.log("Hello");
-            });
+                states = data[1];
+                state_rows = data[0];
 
-            // Index of State is a pointer into state to indicate what spot the current state is at
-            // That spot contains the state's full name and the abbreviation of the state
-            let indexOfState = -1;
-            let i = 0;
-            while(indexOfState == -1) {
-                if(state[i][state_name] == selected_state) {
-                    indexOfState = i;
+                // Index of State is a pointer into state to indicate what spot the current state is at
+                // That spot contains the state's full name and the abbreviation of the state
+                let indexOfState = -1;
+                let i = 0;
+                while(indexOfState == -1) {
+                    if(states[i][state_name] == selected_state) {
+                        indexOfState = i;
+                    }
                 }
-            }
 
-            // Previous and Next States \\
-            // Prev Link
-            let prev_link = "<a href=";
-            let prev_state;
-            if(indexOfState == 0) {
-                prev_state = state[state.length][state_name];
-            } else {
-                prev_state = state[indexOfState + 1][state_name];
-            }
-            prev_link = prev_link + '/state/:' + prev_state + ">Previous State: " + prev_state + "</a>";
+                // Previous and Next States \\
+                // Prev Link
+                let prev_link = "<a href=";
+                let prev_state;
+                if(indexOfState == 0) {
+                    prev_state = states[state.length][state_name];
+                } else {
+                    prev_state = states[indexOfState + 1][state_name];
+                }
+                prev_link = prev_link + '/state/:' + prev_state + ">Previous State: " + prev_state + "</a>";
 
-            //Next Link
-            let next_link = "<a href=";
-            let next_state;
-            if(indexOfState == state.length - 1) {
-                next_state = state[0][state_name];
-            } else {
-                next_state = state[indexOfState - 1][state_name];
-            }
-            next_link = next_link + '/state/:' + next_state + ">Next State: " + next_state + "</a>";
-            
-            template = template.replace("{{PREV_STATE}}", prev_link);
-            template = template.replace("{{NEXT_STATE}}", next_link);
-            // End of Previous and Next Years \\
+                //Next Link
+                let next_link = "<a href=";
+                let next_state;
+                if(indexOfState == state.length - 1) {
+                    next_state = states[0][state_name];
+                } else {
+                    next_state = states[indexOfState + 1][state_name];
+                }
+                next_link = next_link + '/state/:' + next_state + ">Next State: " + next_state + "</a>";
+                
+                template = template.replace("{{PREV_STATE}}", prev_link);
+                template = template.replace("{{NEXT_STATE}}", next_link);
+                // End of Previous and Next Years \\
 
-            // Get the picture \\
-            state_img = "<img src=" + "\"" + state[indexOfState][state_name] + ".jpg" + "\"" + " alt=" + "\"" + state[indexOfState][state_name] + "\"";
-            template = template.replace("{{STATE_IMAGE}}", state_img);
-            // End of gettign the picture \\
+                // Get the picture \\
+                state_img = "<img src=" + "\"" + state[indexOfState][state_name] + ".jpg" + "\"" + " alt=" + "\"" + state[indexOfState][state_name] + "\"";
+                template = template.replace("{{STATE_IMAGE}}", state_img);
+                // End of gettign the picture \\
 
-            // Replace the State Title \\
-            template = template.replace('{{STATE}}', req.params.selected_state);
-            // End of replace state title \\
-
+                // Replace the State Title \\
+                template = template.replace('{{STATE}}', req.params.selected_state);
+                // End of replace state title \\
+            });
             res.status(200).type('html').send(template); // <-- you may need to change this
             res.end();
         }
@@ -277,9 +278,79 @@ app.get('/energy/:selected_energy_source', (req, res) => {
                 console.log("Hello");
             });
 
+            // This is a list of energy source names as well as an index for what energy source we're on
+            var energy_source_names = ["Coal", "Natural Gas", "Nuclear", "Petroleum", "Renewable"];
+            // Index will be used for the Next and Prev
+            var energy_source_index = 0;
+
             // Header for Energy Source \\
-            template = template.replace('{{ENERGY}}', req.params.selected_energy_source);
+            let energy_source = req.params.selected_energy_source;
+            if(req.params.selected_energy_source.includes(":")) {
+                energy_source = req.params.selected_energy_source.slice(1);
+            } else {
+                energy_source = req.selected_energy_source;
+            }
+            
+            // Capitalizes the first letter
+            energy_source = energy_source.charAt(0).toUpperCase() + energy_source.slice(1);
+
+            // This will set all but natural gas correctly
+            var i;
+            for (i = 0; i < energy_source_names.length; i++) {
+                if(energy_source == energy_source_names[i]) {
+                    energy_source_index = i;
+                }
+            }
+            
+            // Nautral gas is different as it has an underscore
+            if(energy_source == "Natural" || energy_source == "Natural_gas" || energy_source == "natural_gas") {
+                energy_source = "Natural Gas";
+                energy_source_index = 1;
+            }
+            
+            template = template.replace('{{SOURCE}}', energy_source);
             // End of header for Energy Source \\
+
+            // Previous and Next Energy Sources \\
+            // Prev Link
+            let prev_link = "<a href=";
+            let prev_source;
+            if(energy_source_index == 0) {
+                prev_source = energy_source_names[4];
+            } else {
+                prev_source = energy_source_names[energy_source_index - 1];
+            
+            }
+            // This is a special handler for natural gas so the url entered is natural_gas
+            let prev_source_special = prev_source;
+            if(prev_source == "Natural Gas") {
+                prev_source_special = "natural_gas";
+            }
+            prev_link = prev_link + '/energy/:' + prev_source_special + ">Previous Source: " + prev_source + "</a>";
+
+            //Next Link
+            let next_link = "<a href=";
+            let next_source;
+            if(energy_source_index == 4) {
+                next_source = energy_source_names[0];
+            } else {
+                next_source = energy_source_names[energy_source_index + 1];
+            }
+
+            // This is a special handler for natural gas so the url entered is natural_gas
+            let next_source_special = next_source;
+            if(next_source == "Natural Gas") {
+                next_source_special = "natural_gas";
+            }
+            next_link = next_link + '/energy/:' + next_source_special + ">Next Source: " + next_source + "</a>";
+
+            template = template.replace("{{PREV_SOURCE}}", prev_link);
+            template = template.replace("{{NEXT_SOURCE}}", next_link);
+            // End of Previous and Next Years \\            
+
+            // Replace the body of the table \\
+            template = template.replace('{{SOURCE_TABLE}}', "<tr><td>Table</tr?</td>");
+            // End of body of the table \\
 
             res.status(200).type('html').send(template); // <-- you may need to change this           
             res.end();
