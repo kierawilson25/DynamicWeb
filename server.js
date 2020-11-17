@@ -27,7 +27,7 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
     }
 });
 
-function generateTable(data) {
+function generateStateTable(data) {
     //Generate the table data
 
     let table = "";
@@ -87,26 +87,28 @@ app.get('/year/:selected_year', (req, res) => {
                // promises.push(getReplacement(data));
             //});
 
-            tb = "";
+            var tb = "";
 
             var queryDonePromise = new Promise(function(resolve, reject) {
                 db.all(query, [year], (err, rows) => {
                     if(err) {
                         console.log("Error in query for Year");
+                        reject();
                     } else {
                         year_rows = rows;
                     }
                     resolve(year_rows);
                 });
+
             }).then(data => {
                 // Table
                 // Write everything as strings not creating elements
                 // Note: Table and table headers can be put in the html (things that are going to be the same on every page)
-                tb = tb + generateTable(data);
-                console.log(tb);
+                tb = tb + generateStateTable(data);
+                template = template.replace("{{YEAR_TABLE}", tb);
                 
             });
-
+            console.log(tb);
 
 
             // Replaces the header year \\
@@ -168,23 +170,28 @@ app.get('/state/:selected_state', (req, res) => {
             let query = 'SELECT * FROM Consumption JOIN States WHERE state_name = ?';
             let state_name = req.params.selected_state;
             let state_rows;
-            db.all(query, [state_name], (err, rows) => {
-                if(err) {
-                    console.log("Error in query for State");
-                } else {
-                    state_rows = rows;
-                }
-            });
+            var queryDonePromise = new Promise(function(resolve, reject) {
+                db.all(query, [state_name], (err, rows) => {
+                    if(err) {
+                        console.log("Error in query for State");
+                    } else {
+                        state_rows = rows;
+                    }
+                });
 
-            // This is to get a list of states to use for next and prev states
-            let states = 0;
-            db.all("SELECT * FROM States", [], (err, rows) => {
-                if(err) {
-                    console.log("Error in query in States for States for next and prev");
-                } else {
-                    states = rows;
-                }
-            })
+                // This is to get a list of states to use for next and prev states
+                var states = 0;
+                db.all("SELECT * FROM States", [], (err, rows) => {
+                    if(err) {
+                        console.log("Error in query in States for States for next and prev");
+                    } else {
+                        states = rows;
+                    }
+                });
+                //if(state_rows.length == 0)
+            }).then(data => {
+                console.log("Hello");
+            });
 
             // Index of State is a pointer into state to indicate what spot the current state is at
             // That spot contains the state's full name and the abbreviation of the state
