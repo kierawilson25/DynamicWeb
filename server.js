@@ -28,7 +28,7 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
     }
 });
 
-function generateStateTable(data) {
+function generateYearTable(data) {
     //Generate the table data
 
     let table = "";
@@ -45,8 +45,47 @@ function generateStateTable(data) {
                 }
             }
         }
-        table = table + " <td>" + total + "</td> "
+        table = table + " <td>" + total + "</td> ";
         table = table + " </tr>";
+    }
+    return table;
+}
+
+function generateStateTable(table) {
+    // Generate State Table
+    let table = "";
+    let key;
+    for(key in data) {
+        let item = data[key];
+        table = table + " <tr> ";
+        let total = 0;
+        for(let element in item) {
+            if(element != "state_abbreviation") {
+                table = table + " <td>" + item[element] + "</td>";
+                if(element != "year") {
+                    total = item[element] + total;
+                }
+            }
+        }
+        table = table + " <td>" + total + "</td>";
+        table = table + " </tr>";
+    }
+    return table;
+}
+
+function generateSourceTable(data, energy_source) {
+    // Generate the table for energy source
+    let table = "";
+    let key;
+    for(key in data) {
+        let item = data[key];
+        table = table + " <tr>";
+        for(let element in item) {
+            if(element == "year" || element == energy_source) {
+                table = table + " <td>" + item[element] + "</td> ";
+            }
+        }
+        table = table + "</tr> ";
     }
     return table;
 }
@@ -104,7 +143,7 @@ app.get('/year/:selected_year', (req, res) => {
                 // Table
                 // Write everything as strings not creating elements
                 // Note: Table and table headers can be put in the html (things that are going to be the same on every page)
-                tb = tb + generateStateTable(data);
+                tb = tb + generateYearTable(data);
                 template = template.replace("{{YEAR_TABLE}}", tb);
                 res.status(200).type('html').send(template); // <-- you may need to change this
             });
