@@ -31,61 +31,63 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
 function generateYearTable(data) {
     //Generate the table data
 
-    let table = "";
+    let tableY = "";
     let key;
     for(key in data) {
         let item = data[key];
-        table = table + " <tr> ";
+        tableY = tableY + " <tr> ";
         let total = 0;
         for(let element in item) {
             if(element != "year") {
-                table = table + " <td>" + item[element] + "</td> ";
+                tableY = tableY + " <td>" + item[element] + "</td> ";
                 if(element != "state_abbreviation") {
                     total = total + parseInt(item[element]);
                 }
             }
         }
-        table = table + " <td>" + total + "</td> ";
-        table = table + " </tr>";
+        tableY = tableY + " <td>" + total + "</td> ";
+        tableY = tableY + " </tr>";
     }
     return table;
 }
 
 function generateStateTable(table) {
     // Generate State Table
-    let table = "";
+    let tableS = "";
     let key;
     for(key in data) {
         let item = data[key];
-        table = table + " <tr> ";
+        tableS = tableS + " <tr> ";
         let total = 0;
         for(let element in item) {
             if(element != "state_abbreviation") {
-                table = table + " <td>" + item[element] + "</td>";
+                tableS = tableS + " <td>" + item[element] + "</td>";
                 if(element != "year") {
                     total = item[element] + total;
                 }
             }
         }
-        table = table + " <td>" + total + "</td>";
-        table = table + " </tr>";
+        tableS = tableS + " <td>" + total + "</td>";
+        tableS = tableS + " </tr>";
     }
-    return table;
+    return tableS;
 }
 
 function generateSourceTable(data, energy_source) {
     // Generate the table for energy source
-    let table = "";
+    let tableE = "";
     let key;
     for(key in data) {
         let item = data[key];
-        table = table + " <tr>";
+        tableE = tableE + " <tr>";
         for(let element in item) {
-            if(element == "year" || element == energy_source) {
-                table = table + " <td>" + item[element] + "</td> ";
+            if(element == energy_source) {
+                tableE = tableE + " <td>" + item[element] + "</td> ";
+            } else if(element == "year" && !tableE.includes(item[element])) {
+                tableE = tableE + " <td>" + item[element] + "</td> ";
             }
         }
-        table = table + "</tr> ";
+        table = tableE + "</tr> ";
     }
     return table;
 }
