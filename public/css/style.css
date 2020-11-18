@@ -100,3 +100,11 @@ nav {
     padding-top: 1rem;
     padding-bottom: 1rem;
 }
+
+#myChart{
+	background-color: rgb(233,244,255) !important;
+	padding-right: 2rem;
+	padding-left: 2rem;
+	padding-top: 2rem;
+	padding-bottom: 2rem;
+}

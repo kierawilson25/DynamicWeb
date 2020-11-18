@@ -26,6 +26,7 @@
         "url": "https://github.com/kierawilson25/DynamicWeb"
     },
     "dependencies": {
+        "chart.js": "^2.9.4",
         "express": "^4.17.1",
         "packages": "0.0.8",
         "sqlite3": "^5.0.0"
