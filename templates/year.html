@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
     <title>US Energy Consumption</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <script type="application/javascript">
         // `year` and total counts for entire US => set these variables equal to appropriate value
         //   * these variables will be defined and accessible from any script loaded after this one
@@ -19,15 +19,13 @@
 <body>
     <nav>
         <a href="/year/:2018">By Year</a>
-        <a href="/state/:Alabama">By State</a>
-        <a href="/energy/:coal">By Energy Type</a>
+        <a href="../state/:Alaska">By State</a>
+        <a href="../energy/:coal">By Energy Type</a>
     </nav>
     <!-- create template here -->
-    <h2>
-        {{PREV_YEAR}}
-        {{YEAR}}
-        {{NEXT_YEAR}}
-    </h2>
+    <span>{{PREV_YEAR}}</span>
+    <span class="primary">{{YEAR}}</span>
+    <span>{{NEXT_YEAR}}</span>
     
     <p>
         <!-- Add contents of the table -->
