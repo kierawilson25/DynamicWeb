@@ -13,6 +13,7 @@ const { resolve } = require('path');
 let public_dir = path.join(__dirname, 'public');
 let template_dir = path.join(__dirname, 'templates');
 let db_filename = path.join(__dirname, 'db', 'usenergy.sqlite3');
+let image_dir = path.join(__dirname,'images');
 
 let app = express();
 let port = 8000;
@@ -55,12 +56,11 @@ app.use(express.static(public_dir)); // serve static files from 'public' directo
 
 // GET request handler for home page '/' (redirect to /year/2018)
 app.get('/', (req, res) => {
-    res.redirect('/year/:2018');
+    res.redirect('/year/2018');
 });
 
 // GET request handler for '/year/*'
 app.get('/year/:selected_year', (req, res) => {
-    console.log(req.params.selected_year);
     fs.readFile(path.join(template_dir, 'year.html'), 'utf8', (err, template) => {
         // modify `template` and send response
         // this will require a query to the SQL database
@@ -78,10 +78,10 @@ app.get('/year/:selected_year', (req, res) => {
             if(req.params.selected_year.includes(":")) {
                 year = parseInt(req.params.selected_year.slice(1, 5));
             } else {
-                year = req.selected_year;
+                year = req.params.selected_year;
             }    
             var year_rows;
-            //const getReplacement = str => Promise.resolve('[${str}]');
+            //const getReplacement = str => Promise.resolve('{str}]');
             //const promises = [];
             //template = template.replace("{{YEAR_TABLE}}", data => {
                // promises.push(getReplacement(data));
@@ -96,8 +96,8 @@ app.get('/year/:selected_year', (req, res) => {
                         reject();
                     } else {
                         year_rows = rows;
+                        resolve(year_rows);
                     }
-                    resolve(year_rows);
                 });
 
             }).then(data => {
@@ -105,17 +105,14 @@ app.get('/year/:selected_year', (req, res) => {
                 // Write everything as strings not creating elements
                 // Note: Table and table headers can be put in the html (things that are going to be the same on every page)
                 tb = tb + generateStateTable(data);
-                template = template.replace("{{YEAR_TABLE}", tb);
-                
+                template = template.replace("{{YEAR_TABLE}}", tb);
+                res.status(200).type('html').send(template); // <-- you may need to change this
             });
-            console.log(tb);
-
-
+            
             // Replaces the header year \\
             template = template.replace("{{YEAR}}", year);
             // End Replace header year \\
-
-            
+          
             // End replace table \\
 
             // Previous and Next Years \\
@@ -143,9 +140,6 @@ app.get('/year/:selected_year', (req, res) => {
             template = template.replace("{{PREV_YEAR}}", prev_link);
             template = template.replace("{{NEXT_YEAR}}", next_link);
             // End of Previous and Next Years \\
-
-            res.status(200).type('html').send(template); // <-- you may need to change this
-            res.end();
         }
 
 
@@ -168,11 +162,14 @@ app.get('/state/:selected_state', (req, res) => {
             // This is the query we will use
             // SELECT * FROM Conspumtion JOIN States WHERE state_name = selected_state
             let query = 'SELECT * FROM Consumption JOIN States WHERE state_name = ?';
-            var state_name = req.params.selected_state;
+            let state_name = "Alabama";
+            state_name = req.params.selected_state;
             if(state_name.includes(":")) {
                 state_name = state_name.slice(1);
             }
             let state_rows;
+            var states;
+
             var queryStatePromise = new Promise(function(resolve, reject) {
                 db.all(query, [state_name], (err, rows) => {
                     if(err) {
@@ -180,23 +177,24 @@ app.get('/state/:selected_state', (req, res) => {
                         reject();
                     } else {
                         state_rows = rows;
+                        resolve(state_rows);
                     }
                 });
 
                 // This is to get a list of states to use for next and prev states
-                var states = 0;
+
                 db.all("SELECT * FROM States", [], (err, rows) => {
                     if(err) {
                         console.log("Error in query in States for States for next and prev");
                         reject("Error in query");
                     } else {
-                        states = rows;
+                        states = rows; 
+                        resolve(states);
                     }
-                });
-                resolve(state_rows)//, states);
+                }); 
             }).then(data => {
                 console.log("Hello");
-                //states = data[1];
+                states = data[1];
                 state_rows = data[0];
             });
             // I created this to test our links as the query isn't working
@@ -206,11 +204,14 @@ app.get('/state/:selected_state', (req, res) => {
             let indexOfState = -1;
             let i = 0;
             while(indexOfState == -1) {
+                
                 if(states[i][1/*"state_name"*/] == state_name) {
                     indexOfState = i;
+                    
                 }
+                i++;
             }
-
+            
             // Previous and Next States \\
             // Prev Link
             let prev_link = "<a href=";
@@ -218,7 +219,7 @@ app.get('/state/:selected_state', (req, res) => {
             if(indexOfState == 0) {
                 prev_state = states[states.length - 1][1/*"state_name"*/];
             } else {
-                prev_state = states[indexOfState + 1][1/*"state_name"*/];
+                prev_state = states[indexOfState - 1][1/*"state_name"*/];
             }
             prev_link = prev_link + '/state/:' + prev_state + ">Previous State: " + prev_state + "</a>";
             
@@ -237,7 +238,11 @@ app.get('/state/:selected_state', (req, res) => {
             // End of Previous and Next Years \\
 
             // Get the picture \\
-            state_img = "<img src=" + "\"" + states[indexOfState][1/*"state_name"*/] + ".jpg" + "\"" + " alt=" + "\"" + states[indexOfState][1/*"state_name"*/] + "\"";
+            let image_url = image_dir + "\\" + "states" + "\\" + state_name + ".png";
+            
+            let state_img = "<img src=" + "\"" + image_url + "\"" + " alt=" + "\"" + state_name + "\"/>";
+            console.log(state_img);
+
             template = template.replace("{{STATE_IMAGE}}", state_img);
             // End of gettign the picture \\
 
@@ -258,7 +263,7 @@ app.get('/energy/:selected_energy_source', (req, res) => {
         // modify `template` and send response
         // this will require a query to the SQL database
         if(err)
-        {
+        { 
             res.status(404).send('Error: No data found');
         }
         else {
@@ -267,34 +272,32 @@ app.get('/energy/:selected_energy_source', (req, res) => {
             // SELECT * FROM Conspumtion
             var query = 'SELECT * FROM Consumption ORDER BY year, state';
             //Loop thru rows, make dict of dicts if the year already exists, check if the state exists, then add it or not depending on if it exists or not
-            //var state_name = selected_state;
             let energy_rows;
+            let energy_source = "coal";
+            energy_source = req.params.selected_energy_source;
+
+            if(req.params.selected_energy_source.includes(":")) {
+                energy_source = req.params.selected_energy_source.slice(1);
+            } else {
+                energy_source = req.params.selected_year;
+            } 
+
             var queryDonePromise = new Promise(function(resolve, reject) {
-                db.all(query, [], (err, rows) => {
+                db.all(query, [energy_source], (err, rows) => {
                     if(err) {
                         console.log("Error in query for Source");
-                        reject();
+                        reject("Error");
                     } else {
                         energy_rows = rows;
                         resolve(energy_rows);
                     }
                 });
-            }).then(data => {
-                console.log("Hello");
-            });
+            })
 
             // This is a list of energy source names as well as an index for what energy source we're on
             var energy_source_names = ["Coal", "Natural Gas", "Nuclear", "Petroleum", "Renewable"];
             // Index will be used for the Next and Prev
             var energy_source_index = 0;
-
-            // Header for Energy Source \\
-            let energy_source = req.params.selected_energy_source;
-            if(req.params.selected_energy_source.includes(":")) {
-                energy_source = req.params.selected_energy_source.slice(1);
-            } else {
-                energy_source = req.selected_energy_source;
-            }
             
             // Capitalizes the first letter
             energy_source = energy_source.charAt(0).toUpperCase() + energy_source.slice(1);
