@@ -15,6 +15,7 @@
         var petroleum_counts;
         var renewable_counts;
     </script>
+    <script type="application/javascript" src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 </head>
 <body>
     <nav>
@@ -55,5 +56,48 @@
         </tr>
         {{TABLE}}
     </table>
+    <canvas id="myChart" width="400" height="400"></canvas>
+    <script>
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['{{labels}}'],
+            datasets: [
+                {
+                    label: 'Coal',
+                    data: [67.8],
+                    backgroundColor: '#D6E9C6' // green
+                },
+                {
+                    label: 'Natural Gas',
+                    data: [20.7],
+                    backgroundColor: '#FAEBCC' // yellow
+                },
+                {
+                    label: 'Nuclear',
+                    data: [11.4],
+                    backgroundColor: '#EBCCD1' // red
+                },
+                {
+                    label: 'petrolium',
+                    data: [11.4],
+                    backgroundColor: '#EBCCD1' // red
+                },
+                {
+                    label: 'Renewable',
+                    data: [11.4],
+                    backgroundColor: '#EBCCD1' // red
+                },
+            ]
+        },
+        options: {
+            scales: {
+                xAxes: [{ stacked: true }],
+                yAxes: [{ stacked: true }]
+            }
+        }
+    });
+    </script>
 </body>
 </html>

@@ -73,6 +73,56 @@ function generateStateTable(data) {
     return tableS;
 }
 
+function generateYears(data) {
+    // Generate State Table
+    let tableS = "";
+    let key;
+    var pos = 0;
+    for(key in data) {
+        let item = data[key];
+        
+        for(let element in item) {
+             if(element == "year" ) {
+                 if(pos==0){
+                    tableS = tableS + item[element];
+                    pos++; 
+                 }else{ 
+                    tableS = tableS + ", " + item[element];
+                 }
+               
+            }
+           
+        }
+    }
+    return tableS;
+}
+
+function generateChartData(data){//need to take in energy total, and energy for each souce, for each year
+    // Generate State Table
+    let tableS = "";
+    let key;
+    for(key in data) {
+        let item = data[key];
+        tableS = tableS + " <tr> ";
+        let total = 0;
+        for(let element in item) {
+            if(element != "state_abbreviation" && element != "state_name" && element !="year") {
+                tableS = tableS + " <td>" + item[element] + "</td>";
+                if(element != "year") {
+                    total = item[element] + total;
+                }
+            }
+        }
+        tableS = tableS + " <td>" + total + "</td>";
+        tableS = tableS + " </tr>";
+    }
+    return tableS;
+  }
+
+
+
+
+}
 function generateSourceTable(data, energy_source) {
     // Generate the table for energy source
     let tableE = "";
@@ -236,6 +286,9 @@ app.get('/state/:selected_state', (req, res) => {
                 //console.log(state_rows);
                 // Generates and replaces the table in the html
                 template = template.replace("{{TABLE}}", generateStateTable(state_rows));
+                console.log(generateYears(state_rows));
+                template = template.replace("'{{labels}}'", generateYears(state_rows));
+
 
                 
                 // Generates a table of states with their abbreviations and Names
