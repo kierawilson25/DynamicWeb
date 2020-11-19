@@ -8,6 +8,7 @@ let sqlite3 = require('sqlite3');
 const { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } = require('constants');
 const { table } = require('console');
 const { resolve } = require('path');
+const { KeyObject } = require('crypto');
 
 
 let public_dir = path.join(__dirname, 'public');
@@ -73,56 +74,6 @@ function generateStateTable(data) {
     return tableS;
 }
 
-function generateYears(data) {
-    // Generate State Table
-    let tableS = "";
-    let key;
-    var pos = 0;
-    for(key in data) {
-        let item = data[key];
-        
-        for(let element in item) {
-             if(element == "year" ) {
-                 if(pos==0){
-                    tableS = tableS + item[element];
-                    pos++; 
-                 }else{ 
-                    tableS = tableS + ", " + item[element];
-                 }
-               
-            }
-           
-        }
-    }
-    return tableS;
-}
-
-function generateChartData(data){//need to take in energy total, and energy for each souce, for each year
-    // Generate State Table
-    let tableS = "";
-    let key;
-    for(key in data) {
-        let item = data[key];
-        tableS = tableS + " <tr> ";
-        let total = 0;
-        for(let element in item) {
-            if(element != "state_abbreviation" && element != "state_name" && element !="year") {
-                tableS = tableS + " <td>" + item[element] + "</td>";
-                if(element != "year") {
-                    total = item[element] + total;
-                }
-            }
-        }
-        tableS = tableS + " <td>" + total + "</td>";
-        tableS = tableS + " </tr>";
-    }
-    return tableS;
-  }
-
-
-
-
-}
 function generateSourceTable(data, energy_source) {
     // Generate the table for energy source
     let tableE = "";
@@ -141,6 +92,227 @@ function generateSourceTable(data, energy_source) {
         }
     }
     return tableE;
+}
+
+function generateYears(data) { //label for years chart
+    // For charts
+    let tableS = "";
+    let key;
+    var pos = 0;
+    for(key in data) {
+        let item = data[key];
+        
+        for(let element in item) {
+             if(element == "year" ) {
+                 if(pos==0){
+                    tableS = tableS + item[element];
+                    pos++; 
+                 } else{ 
+                    tableS = tableS + ", " + item[element];
+                 }
+               
+            }
+           
+        }
+    }
+    return tableS;
+}
+
+function generateStatesLabel(){
+    
+    let state_list = generateStateList();
+    let labels = new Array();
+    for(let i = 0; i < state_list.length; i++) {
+        labels[i] = "\'" + state_list[i][0] + "\'";
+    }
+    return labels;
+}
+
+function generateChartDataState(data){//need to take in energy total, and energy for each souce, for each year
+    // Generate State Table
+    let chartS = "";
+
+    let coal_array = new Array();
+    let gas_array = new Array();
+    let nuclear_array = new Array();
+    let petroleum_array = new Array();
+    let renewable_array = new Array();
+
+    for(key in data) {
+        let item = data[key];
+
+        let year;
+        let coal;
+        let gas;
+        let nuclear;
+        let petroleum;
+        let renewable;
+        let total = 0;
+        for(let element in item) {
+            if(element == "coal") {
+                coal = item[element];
+            } else if(element == "natural_gas") {
+                gas = item[element];
+            } else if(element == "nuclear") {
+                nuclear = item[element];
+            } else if(element == "petroleum") {
+                petroleum = item[element];
+            } else if(element =="renewable") {
+                renewable = item[element];
+            } else if(element == "year") {
+                year = item[element];
+            }
+        }
+        total = coal + gas + nuclear + petroleum + renewable;
+
+        coal_array[year - 1960] = '{x:' + year + ', y:' + ((coal / total) * 100) + '}';
+        gas_array[year - 1960] = '{x:' + year + ', y:' + ((gas / total) * 100) + '}';
+        nuclear_array[year - 1960] = '{x:' + year + ', y:' + ((nuclear / total) * 100) + '}';
+        petroleum_array[year - 1960] = '{x:' + year + ', y:' + ((petroleum / total) * 100) + '}';
+        renewable_array[year - 1960] = '{x:' + year + ', y:' + ((renewable / total) * 100) + '}';
+    }
+
+    // Sets the coal part
+    chartS = chartS + "{label: \'Coal\', data: [" + coal_array + "], backgroundColor: \'#0D7D32\'},";
+    // Natural Gas
+    chartS = chartS + "{label: \'Natural Gas\', data: [" + gas_array + "], backgroundColor: \'#F7F239\'},";
+    // Nuclear
+    chartS = chartS + "{label: \'Nuclear\', data: [" + nuclear_array + "], backgroundColor: \'#FF3346\'},";
+    // Petroleum
+    chartS = chartS + "{label: \'Petroleum\', data: [" + petroleum_array + "], backgroundColor: \'#0000FF\'},";
+    // Renewable
+    chartS = chartS + "{label: \'Renewable\', data: [" + renewable_array + "], backgroundColor: \'#33FFE3\'}";
+
+    return chartS;
+}
+
+function generateChartDataYear(data){//need to take in energy total, and energy for each souce, for each year
+    // Generate State Table
+
+    let state_total = [];
+    let state_i = 0;
+
+    for(key in data) {
+        let item = data[key];
+
+        let coal;
+        let gas;
+        let nuclear;
+        let petroleum;
+        let renewable;
+        let total = 0;
+        for(let element in item) {
+            if(element == "coal") {
+                coal = item[element];
+            } else if(element == "natural_gas") {
+                gas = item[element];
+            } else if(element == "nuclear") {
+                nuclear = item[element];
+            } else if(element == "petroleum") {
+                petroleum = item[element];
+            } else if(element =="renewable") {
+                renewable = item[element];
+            }
+        }
+        total = coal + gas + nuclear + petroleum + renewable;
+
+        state_total[state_i] = total;
+        state_i = state_i + 1;
+    }
+
+    let grand_total = 0;
+    for(let j = 0; j < state_total.length; j++) {
+        grand_total = grand_total + state_total[j];
+    }
+
+    let state_percent = state_total;
+    for(let k = 0; k < state_total.length; k++) {
+        state_percent[k] = (state_total[k] / grand_total) * 100;
+    }
+
+    return state_percent;
+}
+
+function generateChartColorsYear(labels) {
+    let num_colors = labels.length;
+    let colors = new Array();
+
+    for(let i = 0; i < num_colors; i++) {
+        let temp_color = "#"+((1<<24)*Math.random()|0).toString(16);
+        while(colors.includes(temp_color)) {
+            temp_color = "#"+((1<<24)*Math.random()|0).toString(16)
+        }
+        colors[i] = temp_color;
+    }
+
+    for(let j = 0; j < colors.length; j++) {
+        colors[j] = "\'" + colors[j] + "\'";
+    }
+    return colors;
+}
+
+function generateChartDataSource(data, energy_source) {
+    // Generate Source Table
+    let chartE = "";
+
+    var states_amount = [];
+    for(let i = 0; i < 51; i++) {
+        states_amount[i] = [];
+        for(let j = 0; j < 59; j++) {
+            states_amount[i][j] = 0;
+        }
+    }
+    
+    let states = generateStateList();
+
+
+    
+    let key;
+    let i = 0;
+    let j = 0;
+    for(key in data) {
+        let item = data[key];
+        
+        // An array of arrays, each array is it's own state
+        // Each spot in the inner array is a year
+        states_amount[i][j] = item[energy_source];
+        if(i == 50) {
+            i = 0;
+            j++;
+        } else {
+            i++;
+        }
+    }
+
+    // Generate Colors
+    let colors = new Array();
+
+    for(let i = 0; i < 51; i++) {
+        let temp_color = "#"+((1<<24)*Math.random()|0).toString(16);
+        while(colors.includes(temp_color)) {
+            temp_color = "#"+((1<<24)*Math.random()|0).toString(16)
+        }
+        colors[i] = temp_color;
+    }
+
+    let years = [];
+    for(let i = 1960; i < 2019; i++) {
+        years[i - 1960] = i;
+    }
+    for(let i = 0; i < 51; i++) {
+        chartE = chartE + "{label: \'" + states[i][0] + "\', data: [";
+        for(let j = 0; j < 59; j++) {
+            chartE = chartE + "{x:" + years[j] + ", y:" + states_amount[i][j] + "},";
+        }
+        if(i == 50) {
+            chartE = chartE + "], borderColor: \'" + colors[i] + "\', fill: false, pointBackgroundColor: \'" + colors[i] + "\'}";
+        } else {
+            chartE = chartE + "], borderColor: \'" + colors[i] + "\', fill: false, pointBackgroundColor: \'" + colors[i] + "\'},";
+        }
+        
+    }
+
+    return chartE;
 }
 
 app.use(express.static(public_dir)); // serve static files from 'public' directory
@@ -171,7 +343,10 @@ app.get('/year/:selected_year', (req, res) => {
                 year = parseInt(req.params.selected_year.slice(1, 5));
             } else {
                 year = req.params.selected_year;
-            }    
+            } 
+            if(year < 1960 || year > 2018) {
+                res.status(404).send("Error: No data for year " + year);
+            }
             var year_rows;
             //const getReplacement = str => Promise.resolve('{str}]');
             //const promises = [];
@@ -198,6 +373,21 @@ app.get('/year/:selected_year', (req, res) => {
                 // Note: Table and table headers can be put in the html (things that are going to be the same on every page)
                 tb = tb + generateYearTable(data);
                 template = template.replace("{{YEAR_TABLE}}", tb);
+
+                // Gets the chart data
+                let chart_data = generateChartDataYear(data)
+                template = template.replace("{{CHART_DATA}}", "[" + chart_data + "]");
+
+                // Gets the chart labels for states
+                let labels = generateStatesLabel();
+                template = template.replace("{{labels}}", "[" + labels + "]");
+    
+                // Generates colors for each state in doughnut chart
+                let colors = generateChartColorsYear(labels);
+                template = template.replace("{{COLORS}}", "[" + colors + "]");
+
+                
+
                 res.status(200).type('html').send(template); // <-- you may need to change this
             });
             
@@ -264,6 +454,16 @@ app.get('/state/:selected_state', (req, res) => {
             }
             let state_rows;
             var states;
+            // Generates a table of states with their abbreviations and Names
+            states = generateStateList();
+            let states_full_name = new Array();
+            for(let j = 0; j < states.length; j++) {
+                states_full_name[j]  = states[j][1];
+            }
+
+            if(!states_full_name.includes(state_name)) {
+                res.status(404).send('Error: No data found for state ' + state_name);
+            }
 
             var queryStatePromise = new Promise(function(resolve, reject) {
                 // This is the query we will use
@@ -286,13 +486,13 @@ app.get('/state/:selected_state', (req, res) => {
                 //console.log(state_rows);
                 // Generates and replaces the table in the html
                 template = template.replace("{{TABLE}}", generateStateTable(state_rows));
-                console.log(generateYears(state_rows));
+                
                 template = template.replace("'{{labels}}'", generateYears(state_rows));
+
+                template = template.replace("{{CHART}}", generateChartDataState(state_rows));
 
 
                 
-                // Generates a table of states with their abbreviations and Names
-                states = generateStateList();
                 // Index of State is a pointer into state to indicate what spot the current state is at
                 // That spot contains the state's full name and the abbreviation of the state
                 let indexOfState = -1;
@@ -369,11 +569,18 @@ app.get('/state/:selected_state', (req, res) => {
                 template = template.replace("{{NEXT_STATE}}", next_link);
                 // End of Previous and Next Years \\
 
-                // Get the picture \\
-                let image_url = /*image_dir +*/ "../images/" + "states" + "/" + state_name + ".png";
+                // Get the img \\
+                let state_name_img = state_name;
+                if(state_name_img.includes(" ")) {
+                    state_name_img = state_name_img.replace(" ", "_");
+                    if(state_name_img.includes(" ")) {
+                        state_name_img = state_name_img.replace(" ", "_");
+                    }
+                }
+                let image_url = /*image_dir +*/ "../images/" + "states" + "/" + state_name_img + ".png";
                 
-                let state_img = "<img src=" + "\"" + image_url + "\"" + " alt=" + "\"" + state_name + "\"/>";
-                console.log(state_img);
+                let state_img = "<img src=" + "\"" + image_url + "\"" + " alt=" + "\"" + state_name_img + "\"/>";
+                
 
                 template = template.replace("{{STATE_IMAGE}}", state_img);
                 // End of gettign the picture \\
@@ -416,7 +623,11 @@ app.get('/energy/:selected_energy_source', (req, res) => {
                 energy_source = req.params.selected_energy_source.slice(1);
             } else {
                 energy_source = req.params.selected_energy_source;
-            } 
+            }
+
+            if(!energy_source_names.includes(energy_source) && energy_source != "natural_gas") {
+                res.status(404).send('Error: No data found for ' + energy_source);
+            }
             var energy_source_pretty = energy_source.charAt(0).toUpperCase() + energy_source.slice(1);
 
             // This will set all but natural gas correctly
@@ -453,15 +664,27 @@ app.get('/energy/:selected_energy_source', (req, res) => {
             }).then(data => {
                 // Replace Table
                 template = template.replace("{{SOURCE_TABLE}}", generateSourceTable(data, energy_source));
-                res.status(200).type('html').send(template); // <-- you may need to change this  
+                
+                // Generate the chart data for source
+                let chart_data = generateChartDataSource(data, energy_source);
+                template = template.replace("{{CHART}}", chart_data);
+
+                //Generate the labels for the chart
+                let labels = [];
+                for(let i = 1960; i < 2019; i++) {
+                    labels[i - 1960] = "\'" + i + "\'";
+                }
+                template = template.replace("{{labels}}", labels);
+
+                res.status(200).type('html').send(template); // <-- you may need to change this
             });
 
+            let energy_image_url = /*image_dir +*/ "../images/" + "sources" + "/" + energy_source + ".png";
+                
+            let energy_img = "<img src=" + "\"" + energy_image_url + "\"" + " alt=" + "\"" + energy_source_pretty + "\"/>";
 
-            
-            
+            template = template.replace("{{ENERGY_IMAGE}}", energy_img);
 
-
-            
             template = template.replace('{{SOURCE}}', energy_source_pretty);
             // End of header for Energy Source \\
 
